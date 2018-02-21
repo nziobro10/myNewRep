@@ -1,8 +1,7 @@
 #!/bin/bash
+#clearing screen on start
 clear;
-
-
-
+#############
 function usage(){
 	printf "\n\n"
 	printf "	Available TC's: \n"
