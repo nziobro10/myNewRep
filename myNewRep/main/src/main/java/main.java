@@ -11,7 +11,7 @@ public class main {
 
 
 	  Scanner sc = new Scanner(System.in);
-	  System.out.println("generator blablabla put smt to start....");
+	  System.out.println("Generator blablabla put smt to start....");
 	  while ((sc.nextInt() != 0) || (sc.nextLine() != "exit")) {
 
 		System.out.println("Podaj wymiar a : ");
