@@ -174,9 +174,9 @@ EOL
         	printf "###     Filesize : `ls -ltrh . |grep $filename | awk '{ print $5 }'` what is `ls -ltr . |grep $filename | awk '{ print $5 }'` bytes.\n"
         	printf "###     Sending log to SLC `cat /etc/hosts |grep "$slcip"` \n\n\n "
 
-		java -DendpointIp=$ip -Doperation=part -DmediationType=NWI3_MED -DoperationId=atlc.cmb.1111 -Ddn=PLMN/LNBTS-1 -DseType=LNBTS -DlogType=NWI3 -Dmr=PLMN-PLMN -Dcompression=NONE -DpartNumber=1 -Dinput=./$filename -jar ./slc-atlc-simulator-DYNAMIC-SNAPSHOT-jar-with-dependencies.jar;
+		java -DendpointIp=$ip -Doperation=part -DmediationType=NWI3_MED -DoperationId=atlc.cmb.`date +"%d%H%M%S"` -Ddn=PLMN/LNBTS-1 -DseType=LNBTS -DlogType=NWI3 -Dmr=PLMN-PLMN -Dcompression=NONE -DpartNumber=1 -Dinput=./$filename -jar ./slc-atlc-simulator-DYNAMIC-SNAPSHOT-jar-with-dependencies.jar;
 		sleep 1;
-		java -DendpointIp=$ip -Doperation=feedback -DmediationType=NWI3_MED -DoperationId=atlc.cmb.1111 -Ddn=PLMN/LNBTS-1 -DseType=LNBTS -DlogType=NWI3 -Dmr=PLMN-PLMN -DstatusCode=20001 -DtotalFragments=2 -jar ./slc-atlc-simulator-DYNAMIC-SNAPSHOT-jar-with-dependencies.jar;
+		java -DendpointIp=$ip -Doperation=feedback -DmediationType=NWI3_MED -DoperationId=atlc.cmb.`date +"%d%H%M%S"` -Ddn=PLMN/LNBTS-1 -DseType=LNBTS -DlogType=NWI3 -Dmr=PLMN-PLMN -DstatusCode=20001 -DtotalFragments=2 -jar ./slc-atlc-simulator-DYNAMIC-SNAPSHOT-jar-with-dependencies.jar;
 		sleep 2;
 
 				
