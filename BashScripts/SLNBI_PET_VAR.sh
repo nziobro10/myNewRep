@@ -10,6 +10,7 @@ SLCPORT=8393
 
 
 function usage(){
+	printf "	\n"
 	printf "	Available Test Case's: \n\n"
 	printf "	1.SLC restart times\n"
 	printf "	2.Send logs to SLC\n"
@@ -218,7 +219,7 @@ printf "\n====================================\n"
 if [ ! -e `pwd`/*.jar ];then
 	printf "\nWARNING: No simulator jar has been found in `pwd`. See the listing below:\n";
 	ls -l . 
-	exit 0;
+	#exit 0;
 fi
 
 
