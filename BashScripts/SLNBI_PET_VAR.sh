@@ -150,6 +150,7 @@ function makelog(){
 
 	recordsnum=$1
 	ip=$2
+	repetitions=$3
 	filename=created_log.txt
 	MaxRecordValue=500000
 
@@ -179,15 +180,21 @@ EOL
 </log>
 </atlcroot>
 EOL
-
+			
+			filesize=`ls -ltr . |grep $filename | awk '{ print $5 }'`;
+			logtosentsize=$(( $filesize * $repetitions));
+			
         	printf "\n###   Log file created : `pwd`/$filename with  : `less ./$filename |grep '<rec'|wc -l` records.\n"
-        	printf "###     Filesize : `ls -ltrh . |grep $filename | awk '{ print $5 }'` what is `ls -ltr . |grep $filename | awk '{ print $5 }'` bytes.\n"
-        	printf "###     Sending log to SLC `cat /etc/hosts |grep "$slcip"` \n\n\n "
-
-		java -DendpointIp=$ip -Doperation=part -DmediationType=NWI3_MED -DoperationId=atlc.cmb.`date +"%d%H%M%S"` -Ddn=PLMN/LNBTS-1 -DseType=LNBTS -DlogType=NWI3 -Dmr=PLMN-PLMN -Dcompression=NONE -DpartNumber=1 -Dinput=./$filename -jar ./slc-atlc-simulator-DYNAMIC-SNAPSHOT-jar-with-dependencies.jar;
-		sleep 1;
-		java -DendpointIp=$ip -Doperation=feedback -DmediationType=NWI3_MED -DoperationId=atlc.cmb.`date +"%d%H%M%S"` -Ddn=PLMN/LNBTS-1 -DseType=LNBTS -DlogType=NWI3 -Dmr=PLMN-PLMN -DstatusCode=20001 -DtotalFragments=2 -jar ./slc-atlc-simulator-DYNAMIC-SNAPSHOT-jar-with-dependencies.jar;
-		sleep 2;
+        	printf "###     Filesize : `ls -ltrh . |grep $filename | awk '{ print $5 }'` what is $filesize bytes.\n"
+			printf "###     Size of logs which will be send to $slcip : $logtosentsize"
+        	printf "###     Sending logs to SLC `cat /etc/hosts |grep "$slcip"` $repetitions times. \n\n\n "
+		
+		for i in {1..$repetitions};do
+			java -DendpointIp=$ip -Doperation=part -DmediationType=NWI3_MED -DoperationId=atlc.cmb.`date +"%d%H%M%S"` -Ddn=PLMN/LNBTS-1 -DseType=LNBTS -DlogType=NWI3 -Dmr=PLMN-PLMN -Dcompression=NONE -DpartNumber=1 -Dinput=./$filename -jar ./slc-atlc-simulator-DYNAMIC-SNAPSHOT-jar-with-dependencies.jar;
+			sleep 1;
+			java -DendpointIp=$ip -Doperation=feedback -DmediationType=NWI3_MED -DoperationId=atlc.cmb.`date +"%d%H%M%S"` -Ddn=PLMN/LNBTS-1 -DseType=LNBTS -DlogType=NWI3 -Dmr=PLMN-PLMN -DstatusCode=20001 -DtotalFragments=2 -jar ./slc-atlc-simulator-DYNAMIC-SNAPSHOT-jar-with-dependencies.jar;
+			sleep 2;
+		done
 
 				
         	
@@ -264,6 +271,9 @@ touch ./$LOG_FILE
 				printf "###	Provide number of records in log file: "
 				read records_num;
 				echo "$(date '+%Y%m%d-%H:%M:%S') --- Provided numbers of records : ${records_num}" >> $LOG_FILE;
+				printf "###	Provide number sending repetitions: "
+				read rep;
+				echo "$(date '+%Y%m%d-%H:%M:%S') --- Provided numbers of log sending repetitions : ${rep}" >> $LOG_FILE;
 				slcshow;
 				if [ $? -eq 0 ];then
 					printf "\n###	Please, provide slc node IP to proceed : "
@@ -272,8 +282,8 @@ touch ./$LOG_FILE
 							if [[ $? -ne 0 ]];then
 								continue;
 							else
-								makelog $records_num $slcip | tee -a $LOG_FILE
-								erase | tee -a $LOG_FILE
+								makelog $records_num $slcip $rep
+								erase
 							fi
 				fi
 			;;
