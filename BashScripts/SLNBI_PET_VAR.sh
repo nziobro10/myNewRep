@@ -6,6 +6,7 @@ SLCTMPDIR=/var/opt/oss/NSN-slc/tmp/
 SLCDBDIR=/var/opt/oss/NSN-slc/db/
 SLCJMSDIR=/var/opt/oss/NSN-slc/activemq/kahadb/
 SENDERPROP=/etc/opt/oss/NSN-slc/sender-application.properties
+SLCPORT=8393
 
 
 function usage(){
@@ -15,7 +16,7 @@ function usage(){
 	printf "	3.Restart SLC with clearing\n"
 	printf "	4.Components versions\n"
 	printf "	5.NA healtcheck\n"
-	printf "        6.Show logs\n"
+	printf "    6.Show logs\n"
 	printf "	7.SLC status\n"
 	printf "	8.Exit\n"	
 	printf "\nPlease, enter your choice...  "
@@ -44,7 +45,7 @@ function validateip(){
 }
 
 restartslc(){
-    		TIMEOUT=300;
+    	TIMEOUT=300;
 		COUNTER=0;
 		smanager.pl stop service slc-`hostname -s` > /dev/null 2>&1;
 		sleep 5;
@@ -132,7 +133,7 @@ function SLCstatus(){
 #	printf "Disk used in `hostname -f` : `df -h |grep rootVG-var |awk '{print $5}'`\n";
 	printf "### Number of files in slc temp dir : `ls $SLCTMPDIR |wc -l` with size of `du -sh $SLCTMPDIR |awk '{print $1}'`\n";
 	printf "### Number of integrated SIEM systems : `cat $SENDERPROP |grep enabled=true |wc -l`\n";
-	printf "### Receiver ports status on `hostname -f`: `netstat -lanp |grep 8393`\n";
+	printf "### Receiver ports status on `hostname -f`: `netstat -lanp |grep $SLCPORT`\n";
 	
 }
 
