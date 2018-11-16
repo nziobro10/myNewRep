@@ -209,116 +209,119 @@ function erase(){
 
 		
 ##########################################MAIN########################################################
-
 clear;
 printf "\n====================================\n"
 printf "=======SLNBI PET TESTS SCRIPTS======"
 printf "\n====================================\n"
 
+
+if [ ! -e `pwd`/*.jar ];then
+	printf "\nWARNING: No simulator jar has been found in `pwd`. See the listing below:\n";
+	ls -l . 
+	exit 0;
+fi
+
+
 find . -type f  -name '*logs.txt' -exec rm {} \;
-LOG_FILE=$(date '+%Y-%m-%d_%H:%M:%S')_SLNBI_PET_logs.txt
+
 touch ./$LOG_FILE
 
-while(true);do
-usage
-read choice
 
-
-
-	case "$choice" in 
-		1)
-			printf "###	Scenario $choice. launched...\n"
-			printf "###	Provide number of restart repetitions: "
-			read rep
-			slcshow;
-			if [ $? -eq 0 ];then
-				printf "\n###	Please, provide slc node IP to proceed : "
-				read slcip;
-					validateip $slcip;
-						if [[ $? -ne 0 ]];then
-							continue
-						else
-							printf "SLC is restarting. It may take longer time....\n"
-							ssh -q root@$slcip "$(typeset -f restartslc); for i in {1..$rep};do restartslc;done";
-								if [ $? -ne 1 ];then
-									ssh -q root@$slcip "$(typeset -f results_of_given_repetitions); results_of_given_repetitions $rep" |while IFS= read -r line; do printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$line"; done | tee -a $LOG_FILE;
-								fi
-						fi
-			fi
-			
-			
-		;;
-		2)	
-			printf "###	Scenario $choice. launched...\n"
-			printf "###	Provide number of records in log file: "
-			read records_num;
-			slcshow;
-			if [ $? -eq 0 ];then
-				printf "\n###	Please, provide slc node IP to proceed : "
-				read slcip;
-					validateip $slcip;
-                        if [[ $? -ne 0 ]];then
-                            continue;
-                        else
-							makelog $records_num $slcip | tee -a $LOG_FILE
-							erase | tee -a $LOG_FILE
-						fi
-			fi
+	while(true);do
+		usage
+		read choice
+		case "$choice" in 
+			1)
+				printf "###	Scenario $choice. launched...\n"
+				printf "###	Provide number of restart repetitions: "
+				read rep
+				slcshow;
+				if [ $? -eq 0 ];then
+					printf "\n###	Please, provide slc node IP to proceed : "
+					read slcip;
+						validateip $slcip;
+							if [[ $? -ne 0 ]];then
+								continue
+							else
+								printf "SLC is restarting. It may take longer time....\n"
+								ssh -q root@$slcip "$(typeset -f restartslc); for i in {1..$rep};do restartslc;done";
+									if [ $? -ne 1 ];then
+										ssh -q root@$slcip "$(typeset -f results_of_given_repetitions); results_of_given_repetitions $rep" |while IFS= read -r line; do printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$line"; done | tee -a $LOG_FILE;
+									fi
+							fi
+				fi
 			;;
-		3)
-			printf "###	Scenario $choice. launched...\n"
-			slcshow;
-			if [ $? -eq 0 ];then
-				printf "\n###	Please, provide slc node IP to proceed : "
-				read ip
-					validateip $ip;
-						if [[ $? -ne 0 ]];then
-							continue
-						else
-							ssh -q root@$ip "$(typeset -f restarting_with_clearing); restarting_with_clearing";
-						fi
-				ssh -q root@$ip "$(typeset -f SLCstatus); SLCstatus";
-			fi
+			2)	
+				printf "###	Scenario $choice. launched...\n"
+				printf "###	Provide number of records in log file: "
+				read records_num;
+				slcshow;
+				if [ $? -eq 0 ];then
+					printf "\n###	Please, provide slc node IP to proceed : "
+					read slcip;
+						validateip $slcip;
+							if [[ $? -ne 0 ]];then
+								continue;
+							else
+								makelog $records_num $slcip | tee -a $LOG_FILE
+								erase | tee -a $LOG_FILE
+							fi
+				fi
 			;;
-		 4)
-			printf "###	Scenario $choice. launched...\n"
-			NAversion;
+			3)
+				printf "###	Scenario $choice. launched...\n"
+				slcshow;
+				if [ $? -eq 0 ];then
+					printf "\n###	Please, provide slc node IP to proceed : "
+					read ip
+						validateip $ip;
+							if [[ $? -ne 0 ]];then
+								continue
+							else
+								ssh -q root@$ip "$(typeset -f restarting_with_clearing); restarting_with_clearing";
+							fi
+					ssh -q root@$ip "$(typeset -f SLCstatus); SLCstatus";
+				fi
 			;;
-		 5)
-			printf "###	Scenario $choice. launched...\n"
-			printf "### 	Checking for not started services...\n"
-			healthcheck;
+			4)
+				printf "###	Scenario $choice. launched...\n"
+				NAversion;
 			;;
-		 6)
-			printf "###	Scenario $choice. launched...\n"
-			tail -n 15 ./$LOG_FILE;
+			5)
+				printf "###	Scenario $choice. launched...\n"
+				printf "### 	Checking for not started services...\n"
+				healthcheck;
 			;;
-		 7)
-			printf "###	Scenario $choice. launched...\n"
-			for i in `smanager.pl status service ^slc |cut -d ":" -f2`;do
-				printf "STATUS FOR : $i\n";
-				ssh -q root@$i "$(typeset -f SLCstatus); SLCstatus";
-			done
+			6)
+				printf "###	Scenario $choice. launched...\n"
+				tail -n 15 ./$LOG_FILE;
 			;;
-		 8| exit)
-			printf "###	Scenario $choice. launched...\n"
-			printf "\nDo you want to clear logs before exiting? Y/N";
-			read ans
-			if [ $ans == 'Y' ];then
-				find . -type f  -name '*logs.txt' -exec rm {} \;
-				printf "\nExiting.\n";
-				break
-			else
-				printf "\nExiting.\n";
-                                break
-			fi
+			7)
+				printf "###	Scenario $choice. launched...\n"
+				for i in `smanager.pl status service ^slc |cut -d ":" -f2`;do
+					printf "STATUS FOR : $i\n";
+					ssh -q root@$i "$(typeset -f SLCstatus); SLCstatus";
+				done
 			;;
-			
-		*)
-			printf "\nWrong parameter provided. Exiting... \n"
-			sleep 2;
-			exit 0;
+			8| exit)
+				printf "###	Scenario $choice. launched...\n"
+				printf "\nDo you want to clear logs before exiting? Y/N";
+				read ans
+				if [ $ans == 'Y' ];then
+					find . -type f  -name '*logs.txt' -exec rm {} \;
+					printf "\nExiting.\n";
+					break
+				else
+					printf "\nExiting.\n";
+                    break
+				fi
 			;;
-	esac
-unset choice
-done
+			*)
+				printf "\nWrong parameter provided. Exiting... \n"
+				sleep 2;
+				exit 0;
+			;;
+		esac
+		unset choice
+	done
+#fi
