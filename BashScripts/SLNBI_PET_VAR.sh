@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SLC_LOGS_DIR=/usr/share/tomcat_slc/logs
-LOG_FILE=$(date '+%Y-%m-%d_%H:%M:%S')_SLNBI_PET_logs.txt
+LOG_FILE=$(date '+%Y%m%d_%H%M%S')_SLNBI_PET_logs.txt
 SLCTMPDIR=/var/opt/oss/NSN-slc/tmp/
 SLCDBDIR=/var/opt/oss/NSN-slc/db/
 SLCJMSDIR=/var/opt/oss/NSN-slc/activemq/kahadb/
@@ -11,7 +11,9 @@ SLCPORT=8393
 
 function usage(){
 	printf "	\n"
-	printf "	Available Test Case's: \n\n"
+	printf "==========================================\n"
+	printf "	Available Test Case's: \n"
+	printf "==========================================\n"
 	printf "	1.SLC restart times\n"
 	printf "	2.Send logs to SLC\n"
 	printf "	3.Restart SLC with data clearing\n"
@@ -20,6 +22,7 @@ function usage(){
 	printf "	6.Show logs\n"
 	printf "	7.Show SLC status\n"
 	printf "	8.Exit\n"	
+	printf "==========================================\n"
 	printf "\nPlease, enter your choice [1-8]...  "
 }
 
@@ -208,22 +211,25 @@ function erase(){
 			
 }
 
+
 		
 ##########################################MAIN########################################################
 clear;
+touch ./$LOG_FILE
 printf "\n====================================\n"
-printf "=======SLNBI PET TESTS SCRIPTS======"
+printf "======SLNBI PET TESTS SCRIPTS======"
 printf "\n====================================\n"
 
 
 if [ ! -e `pwd`/*.jar ];then
-	printf "\nWARNING: No simulator jar has been found in `pwd`. See the listing below:\n";
-	ls -l . 
+	printf "\n!!!WARNING: No simulator jar has been found in `pwd`. See the listing below:\n\n"  | tee -a $LOG_FILE;
+	ls -l .
+	#NOT GOING TO MAIN MENU WHEN UNHASHED
 	#exit 0;
 fi
 
 
-find . -type f  -name '*logs.txt' -exec rm {} \;
+#find . -type f  -name '*logs.txt' -exec rm {} \;
 
 touch ./$LOG_FILE
 
@@ -233,9 +239,10 @@ touch ./$LOG_FILE
 		read choice
 		case "$choice" in 
 			1)
-				printf "###	Scenario $choice. launched...\n"
+				printf "###	Scenario $choice. launched...\n" | tee -a $LOG_FILE;
 				printf "###	Provide number of restart repetitions: "
 				read rep
+				echo "$(date '+%Y%m%d-%H:%M:%S') --- Provided repetitions : ${rep}" >> $LOG_FILE;
 				slcshow;
 				if [ $? -eq 0 ];then
 					printf "\n###	Please, provide slc node IP to proceed : "
@@ -253,9 +260,10 @@ touch ./$LOG_FILE
 				fi
 			;;
 			2)	
-				printf "###	Scenario $choice. launched...\n"
+				printf "###	Scenario $choice. launched...\n" | tee -a $LOG_FILE;
 				printf "###	Provide number of records in log file: "
 				read records_num;
+				echo "$(date '+%Y%m%d-%H:%M:%S') --- Provided numbers of records : ${records_num}" >> $LOG_FILE;
 				slcshow;
 				if [ $? -eq 0 ];then
 					printf "\n###	Please, provide slc node IP to proceed : "
@@ -270,7 +278,7 @@ touch ./$LOG_FILE
 				fi
 			;;
 			3)
-				printf "###	Scenario $choice. launched...\n"
+				printf "###	Scenario $choice. launched...\n" | tee -a $LOG_FILE;
 				slcshow;
 				if [ $? -eq 0 ];then
 					printf "\n###	Please, provide slc node IP to proceed : "
@@ -280,32 +288,33 @@ touch ./$LOG_FILE
 								continue
 							else
 								ssh -q root@$ip "$(typeset -f restarting_with_clearing); restarting_with_clearing";
+								echo "$(date '+%Y%m%d-%H:%M:%S') --- Restarting $ip SLC with clearing" >> $LOG_FILE;
 							fi
 					ssh -q root@$ip "$(typeset -f SLCstatus); SLCstatus";
 				fi
 			;;
 			4)
-				printf "###	Scenario $choice. launched...\n"
+				printf "###	Scenario $choice. launched...\n" | tee -a $LOG_FILE;
 				NAversion;
 			;;
 			5)
-				printf "###	Scenario $choice. launched...\n"
+				printf "###	Scenario $choice. launched...\n" | tee -a $LOG_FILE;
 				printf "### 	Checking for not started services...\n"
 				healthcheck;
 			;;
 			6)
-				printf "###	Scenario $choice. launched...\n"
+				printf "###	Listing $LOG_FILE file : \n\n";
 				tail -n 15 ./$LOG_FILE;
 			;;
 			7)
-				printf "###	Scenario $choice. launched...\n"
+				printf "###	Scenario $choice. launched...\n" | tee -a $LOG_FILE;
 				for i in `smanager.pl status service ^slc |cut -d ":" -f2`;do
 					printf "STATUS FOR : $i\n";
 					ssh -q root@$i "$(typeset -f SLCstatus); SLCstatus";
 				done
 			;;
 			8| exit)
-				printf "###	Scenario $choice. launched...\n"
+				printf "###	Scenario $choice. launched...\n" | tee -a $LOG_FILE;
 				printf "\nDo you want to clear logs before exiting? Y/N";
 				read ans
 				if [ $ans == 'Y' ];then
@@ -318,7 +327,7 @@ touch ./$LOG_FILE
 				fi
 			;;
 			*)
-				printf "\nWrong parameter provided. Exiting... \n"
+				printf "\nWrong parameter provided. Exiting... \n" | tee -a $LOG_FILE;
 				sleep 2;
 				exit 0;
 			;;
