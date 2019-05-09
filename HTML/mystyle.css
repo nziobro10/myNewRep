@@ -1,0 +1,38 @@
+body {
+	background: #F54F1A none repeat scroll 50% 50%;
+}
+
+.one {
+	background: #44F56F none repeat scroll 50% 50%;
+	font-family: Tahoma, Geneva, sans-serif;
+font-size: 16px;
+letter-spacing: 4.6px;
+word-spacing: 4px;
+color: #000000;
+font-weight: 400;
+text-decoration: none;
+font-style: normal;
+font-variant: small-caps;
+text-transform: capitalize;
+padding: 20px 20px;
+}
+.one:hover {
+	background: #3573F5 none repeat scroll 50% 50%;
+}
+h1 {
+ font-family: Tahoma, Geneva, sans-serif;
+font-size: 16px;
+letter-spacing: 4.6px;
+word-spacing: 4px;
+color: #000000;
+font-weight: 400;
+text-decoration: none;
+font-style: normal;
+font-variant: small-caps;
+text-transform: capitalize;
+}
+
+h1:hover {
+  opacity: 1.0;
+  filter: alpha(opacity=100); /* For IE8 and earlier */
+}

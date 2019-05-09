@@ -9,6 +9,7 @@ SENDERPROP=/etc/opt/oss/NSN-slc/sender-application.properties
 SLCPORT=8393
 
 
+
 function usage(){
 	printf "	\n"
 	printf "==========================================\n"
@@ -21,7 +22,8 @@ function usage(){
 	printf "	5.NetAct basic healtcheck\n"
 	printf "	6.Show logs\n"
 	printf "	7.Show SLC status\n"
-	printf "	8.Exit\n"	
+	printf "	8.Stop/Start all ATFC\n"
+	printf "	9.Exit\n"	
 	printf "==========================================\n"
 	printf "\nPlease, enter your choice [1-8]...  "
 }
@@ -48,9 +50,10 @@ function validateip(){
     fi
 }
 
-restartslc(){
+function restartslc(){
     	TIMEOUT=300;
 		COUNTER=0;
+		SLC_LOGS_DIR=/usr/share/tomcat_slc/logs
 		smanager.pl stop service slc-`hostname -s` > /dev/null 2>&1;
 		sleep 5;
 		smanager.pl start service slc-`hostname -s` > /dev/null 2>&1;
@@ -66,6 +69,7 @@ restartslc(){
 }
 
 function restarting_with_clearing(){
+	SLC_LOGS_DIR=/usr/share/tomcat_slc/logs
 	printf "\nAre you sure you want to restart SLC node. DB Data, Temp Data and JMS queue will be deleted: Y/N ?"
 	read answear;
 	if [ $answear == 'Y' ];then
@@ -90,7 +94,8 @@ function restarting_with_clearing(){
 	fi
 }
 
-results_of_given_repetitions(){	
+function results_of_given_repetitions(){	
+	SLC_LOGS_DIR=/usr/share/tomcat_slc/logs
 	CATALINA_LOG_FILE=$(ls -ltr ${SLC_LOGS_DIR}/* |grep catalina | tail -1 | awk '{print $NF}');
 	REPS=$1;
         echo "Start times: ";
@@ -99,7 +104,7 @@ results_of_given_repetitions(){
 #        grep "Server startup" $CATALINA_LOG_FILE |tail -n $REPS | cut -f5 -d' ' | awk '{ cumulative_start_time+= $1} END { print cumulative_start_time/NR }';
 }
 
-results_of_all_restarts(){
+function results_of_all_restarts(){
         echo "Start times: ";
         grep "Server startup" $CATALINA_LOG_FILE;
         echo "Start times average of "$(grep "Server startup" $CATALINA_LOG_FILE |wc -l)" repetitions:";
@@ -107,7 +112,7 @@ results_of_all_restarts(){
 }
 
 function slcshow(){
-	if [ -f /etc/init.d/smanager.pl ];then
+	if [ -f /opt/cpf/bin/smanager.pl ];then
 		for i in `smanager.pl status service ^slc |cut -d ":" -f2`; do
         	cat /etc/hosts |grep $i;
 		done
@@ -160,19 +165,17 @@ function makelog(){
 
         	touch ./$filename
         	cat > ./$filename << EOL
-
 <?xml version="1.0" encoding="UTF-8"?>
 <atlcroot>
-<log logFileName="AUDIT_LOG" logType="AUDIT_LOG" creationTime="`date "+%Y-%m-%dT%H:%M:%S%:z"`">
-		
+<log logFileName="AUDIT_LOG" logType="AUDIT_LOG" creationTime="`date "+%Y-%m-%dT%H:%M:%S%:z"`">		
 EOL
                 	for ((i=1 ; i <= $recordsnum ; i++));do
                         	cat >> ./$filename << EOL
-	<record sessionID="OMAgentWebUISessionId_1510750197" eventTime="`date "+%Y-%m-%dT%H:%M:%S%:z"`" >
-		<operation>upload_active_faults</operation>
-                <interfaceType>OMAgentWebUI</interfaceType>
-                <operationId>OMAgentWebUIOperation_alarmUpload</operationId>
-        </record>
+<record sessionID="OMAgentWebUISessionId_1510750197" eventTime="`date "+%Y-%m-%dT%H:%M:%S%:z"`">
+	<operation>upload_active_faults</operation>
+        <interfaceType>OMAgentWebUI</interfaceType>
+        <operationId>OMAgentWebUIOperation_alarmUpload</operationId>
+</record>
 EOL
                 		echo -ne "###   Filling log file... : $i\r";
                 	done
@@ -182,24 +185,27 @@ EOL
 EOL
 			
 			filesize=`ls -ltr . |grep $filename | awk '{ print $5 }'`;
-			logtosentsize=$(( $filesize * $repetitions));
+			logtosentsize=$(( $filesize * $repetitions ));
+			logtosentsizeMB=$(( $logtosentsize / 1000000 ));
 			
         	printf "\n###   Log file created : `pwd`/$filename with  : `less ./$filename |grep '<rec'|wc -l` records.\n"
         	printf "###     Filesize : `ls -ltrh . |grep $filename | awk '{ print $5 }'` what is $filesize bytes.\n"
-			printf "###     Size of logs which will be send to $slcip : $logtosentsize"
+		printf "###     ~~Size of logs which will be send to $slcip : $logtosentsize B, $logtosentsizeMB MB\n"
         	printf "###     Sending logs to SLC `cat /etc/hosts |grep "$slcip"` $repetitions times. \n\n\n "
 		
-		for i in {1..$repetitions};do
-			java -DendpointIp=$ip -Doperation=part -DmediationType=NWI3_MED -DoperationId=atlc.cmb.`date +"%d%H%M%S"` -Ddn=PLMN/LNBTS-1 -DseType=LNBTS -DlogType=NWI3 -Dmr=PLMN-PLMN -Dcompression=NONE -DpartNumber=1 -Dinput=./$filename -jar ./slc-atlc-simulator-DYNAMIC-SNAPSHOT-jar-with-dependencies.jar;
+		for ((i=1; i <= $repetitions ; i++));do
+			printf "Sending logs to $ip Iteration : $i \n";
+			log_ts=`date +"%d%H%M%S"`;
+			java -DendpointIp=$ip -Doperation=part -DmediationType=NWI3_MED -DoperationId=atlc.cmb.$log_ts -Ddn=PLMN/LNBTS-1 -DseType=LNBTS -DlogType=NWI3 -Dmr=PLMN-PLMN -Dcompression=NONE -DpartNumber=1 -Dinput=./$filename -jar ./slc-atlc-simulator-DYNAMIC-SNAPSHOT-jar-with-dependencies.jar;
 			sleep 1;
-			java -DendpointIp=$ip -Doperation=feedback -DmediationType=NWI3_MED -DoperationId=atlc.cmb.`date +"%d%H%M%S"` -Ddn=PLMN/LNBTS-1 -DseType=LNBTS -DlogType=NWI3 -Dmr=PLMN-PLMN -DstatusCode=20001 -DtotalFragments=2 -jar ./slc-atlc-simulator-DYNAMIC-SNAPSHOT-jar-with-dependencies.jar;
+			java -DendpointIp=$ip -Doperation=feedback -DmediationType=NWI3_MED -DoperationId=atlc.cmb.$log_ts -Ddn=PLMN/LNBTS-1 -DseType=LNBTS -DlogType=NWI3 -Dmr=PLMN-PLMN -DstatusCode=20001 -DtotalFragments=2 -jar ./slc-atlc-simulator-DYNAMIC-SNAPSHOT-jar-with-dependencies.jar;
 			sleep 2;
 		done
 
 				
         	
 	else
-        	printf "\nMaximum record value $MaxRecordValue has been reached  or simulator is not present in `pwd`.\n"
+        	printf "\nMaximum record value $MaxRecordValue has been reached or simulator is not present in `pwd`.\n"
 		ls -la . |grep *.jar
 	fi
 }
@@ -207,18 +213,27 @@ EOL
 function erase(){
 	
 	filename=created_log.txt
-	printf "\nDo you want to remove created_log_file.txt ?? Y/N";
-        read ans;
-        	if [ $ans == 'Y' ];then
-                	rm -rf ./$filename
-                        printf "Log $filename has been deleted.\n";
-		else
-			return 0;
-		fi
+	if [ -f .${filename} ];then
+		printf "\nDo you want to remove created_log_file.txt ?? Y/N";
+        	read ans;
+        		if [ $ans == 'Y' ];then
+                		rm -rf ./$filename
+                        	printf "Log $filename has been deleted.\n";
+			else
+				return 0;
+			fi
+	fi
 			
 }
 
-
+function labCheck(){
+		HOSTNAME=`hostname -f |cut -d "." -f1`;
+		if [ "echo $HOSTNAME |grep clab" == "0" ];then	
+			return 0;
+		else
+			return 1;
+		fi
+}
 		
 ##########################################MAIN########################################################
 clear;
@@ -323,7 +338,22 @@ touch ./$LOG_FILE
 					ssh -q root@$i "$(typeset -f SLCstatus); SLCstatus";
 				done
 			;;
-			8| exit)
+			8)
+				printf "###	Scenario $choice. launched...\n" | tee -a $LOG_FILE;
+				printf "###	Please provide action stop/start...\n";
+				read action;
+				labCheck
+				if [ $? -eq 0 ];then
+					printf "### ${action}ing all ATFC's\n";
+					for i in `cat /etc/hosts |grep clab|cut -d " " -f2|cut -d "." -f1`;do smanager.pl $action service atfc-$i;done
+				else
+					printf "###	Lab is not clab. please provide hostname prefix (clab/vsp/sprint etc)... "
+					read host;
+					printf "### ${action}ing all ATFC's\n";
+					for i in `cat /etc/hosts |grep $host|cut -d " " -f2|cut -d "." -f1`;do smanager.pl $action service atfc-$i;done
+				fi
+			;;
+			9| exit)
 				printf "###	Scenario $choice. launched...\n" | tee -a $LOG_FILE;
 				printf "\nDo you want to clear logs before exiting? Y/N";
 				read ans
